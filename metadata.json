@@ -1,0 +1,6 @@
+{
+  "name": "ScholarCraft",
+  "description": "AI Research Title, Abstract & Keyword Generator with monochrome editorial aesthetics and domain-aware academic synthesis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
