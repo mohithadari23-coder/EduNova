@@ -261,7 +261,7 @@ export function ResearchOutputs({
                         key={key}
                         initial={prefersReducedMotion ? false : { opacity: 0, x: -14 }}
                         whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true, amount: 0.2 }}
+                        viewport={{ once: true, amount: 'some' }}
                         transition={{
                           duration: 0.4,
                           delay: index * 0.08,
@@ -328,7 +328,7 @@ export function ResearchOutputs({
                 <motion.p
                   initial={prefersReducedMotion ? false : { opacity: 0 }}
                   whileInView={{ opacity: 1 }}
-                  viewport={{ once: true, amount: 0.2 }}
+                  viewport={{ once: true, amount: 'some' }}
                   transition={{ duration: 0.55, delay: 0.1 }}
                   className="mt-6 max-w-[74ch] text-base leading-[1.78] text-[#E5E5E5]"
                 >
@@ -370,7 +370,7 @@ export function ResearchOutputs({
                           ? undefined
                           : { y: -3, scale: 1.04, borderColor: '#FFFFFF' }
                       }
-                      viewport={{ once: true, amount: 0.2 }}
+                      viewport={{ once: true, amount: 'some' }}
                       transition={{
                         duration: 0.35,
                         delay: index * 0.06,
@@ -419,7 +419,7 @@ export function ResearchOutputs({
                         key={idx}
                         initial={prefersReducedMotion ? false : { opacity: 0, x: -12 }}
                         whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true, amount: 0.2 }}
+                        viewport={{ once: true, amount: 'some' }}
                         transition={{
                           duration: 0.38,
                           delay: idx * 0.08,
@@ -471,7 +471,7 @@ export function ResearchOutputs({
                         key={idx}
                         initial={prefersReducedMotion ? false : { opacity: 0, x: -12 }}
                         whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true, amount: 0.2 }}
+                        viewport={{ once: true, amount: 'some' }}
                         transition={{
                           duration: 0.38,
                           delay: idx * 0.08,

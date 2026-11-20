@@ -20,17 +20,14 @@ export function CustomCursor() {
   const haloY = useSpring(mouseY, { stiffness: 180, damping: 26, mass: 0.65 });
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion) {
+      setEnabled(false);
+      return;
+    }
 
     const finePointerQuery = window.matchMedia('(pointer: fine) and (hover: hover)');
     const updateCapability = () => {
-      const isFine = finePointerQuery.matches;
-      setEnabled(isFine);
-      if (isFine) {
-        document.body.classList.add('custom-cursor-active');
-      } else {
-        document.body.classList.remove('custom-cursor-active');
-      }
+      setEnabled(finePointerQuery.matches);
     };
 
     updateCapability();
@@ -38,27 +35,38 @@ export function CustomCursor() {
 
     const onTouchStart = () => {
       setEnabled(false);
-      document.body.classList.remove('custom-cursor-active');
+      setVisible(false);
     };
     window.addEventListener('touchstart', onTouchStart, { passive: true });
 
     return () => {
       finePointerQuery.removeEventListener('change', updateCapability);
       window.removeEventListener('touchstart', onTouchStart);
-      document.body.classList.remove('custom-cursor-active');
     };
   }, [prefersReducedMotion]);
 
   useEffect(() => {
+    if (enabled && visible) {
+      document.body.classList.add('custom-cursor-active');
+    } else {
+      document.body.classList.remove('custom-cursor-active');
+    }
+    return () => {
+      document.body.classList.remove('custom-cursor-active');
+    };
+  }, [enabled, visible]);
+
+  useEffect(() => {
     if (!enabled) return;
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return;
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
       setVisible(true);
 
       const target = e.target as HTMLElement | null;
-      if (!target) {
+      if (!target || typeof target.closest !== 'function') {
         setVariant('default');
         return;
       }
@@ -78,16 +86,16 @@ export function CustomCursor() {
     const onDown = () => setPressed(true);
     const onUp = () => setPressed(false);
 
-    window.addEventListener('mousemove', onMove, { passive: true });
+    window.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('mouseleave', onLeave);
-    window.addEventListener('mousedown', onDown);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener('pointerdown', onDown, { passive: true });
+    window.addEventListener('pointerup', onUp, { passive: true });
 
     return () => {
-      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('pointermove', onMove);
       document.removeEventListener('mouseleave', onLeave);
-      window.removeEventListener('mousedown', onDown);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerup', onUp);
     };
   }, [enabled, mouseX, mouseY]);
 
@@ -115,7 +123,6 @@ export function CustomCursor() {
       className="pointer-events-none fixed inset-0 z-[100] mix-blend-difference"
       aria-hidden="true"
     >
-      {/* Secondary delayed outer reticle */}
       <motion.div
         style={{
           x: haloX,
@@ -131,7 +138,6 @@ export function CustomCursor() {
         className="fixed top-0 left-0 h-9 w-9 rounded-full border border-dashed border-white"
       />
 
-      {/* Primary trailing ring */}
       <motion.div
         style={{
           x: ringX,
@@ -149,7 +155,6 @@ export function CustomCursor() {
         className="fixed top-0 left-0 h-8 w-8 border border-white"
       />
 
-      {/* Precision center dot */}
       <motion.div
         style={{
           x: mouseX,

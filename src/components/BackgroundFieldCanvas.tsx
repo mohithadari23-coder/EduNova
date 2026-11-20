@@ -34,11 +34,13 @@ export function BackgroundFieldCanvas() {
 
     const initNodes = (w: number, h: number) => {
       nodes.length = 0;
+      const safeW = Math.max(1, w);
+      const safeH = Math.max(1, h);
       for (let i = 0; i < NODE_COUNT; i++) {
         const depth = 0.35 + ((i * 0.6180339) % 1) * 0.65;
         nodes.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
+          x: Math.random() * safeW,
+          y: Math.random() * safeH,
           vx: (Math.random() - 0.5) * 0.42 * depth,
           vy: (Math.random() - 0.5) * 0.38 * depth,
           depth,
@@ -49,10 +51,10 @@ export function BackgroundFieldCanvas() {
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = Math.max(1, Math.floor(width * dpr));
-      canvas.height = Math.max(1, Math.floor(height * dpr));
+      width = Math.max(1, window.innerWidth);
+      height = Math.max(1, window.innerHeight);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (nodes.length === 0) {
         initNodes(width, height);
@@ -62,8 +64,8 @@ export function BackgroundFieldCanvas() {
     resize();
     window.addEventListener('resize', resize);
 
-    let mouseX = -9999;
-    let mouseY = -9999;
+    let mouseX = width * 0.5;
+    let mouseY = height * 0.5;
     let smoothMouseX = width * 0.5;
     let smoothMouseY = height * 0.5;
     let pointerActive = false;
@@ -91,6 +93,11 @@ export function BackgroundFieldCanvas() {
     let rafId = 0;
 
     const render = () => {
+      if (width <= 0 || height <= 0) {
+        if (!prefersReducedMotion) rafId = requestAnimationFrame(render);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
       const scrollOffset = window.scrollY || 0;
@@ -106,14 +113,15 @@ export function BackgroundFieldCanvas() {
         smoothMouseY += (height * 0.5 - smoothMouseY) * 0.02;
       }
 
-      // 1. Subtle pointer-following monochrome radial light aura
+      // 1. Pointer-following monochrome radial light aura
+      const auraRadius = Math.max(10, Math.max(width, height) * 0.34);
       const aura = ctx.createRadialGradient(
         smoothMouseX,
         smoothMouseY,
         0,
         smoothMouseX,
         smoothMouseY,
-        Math.max(width, height) * 0.34
+        auraRadius
       );
       aura.addColorStop(0, 'rgba(255, 255, 255, 0.045)');
       aura.addColorStop(0.5, 'rgba(255, 255, 255, 0.014)');
@@ -143,7 +151,6 @@ export function BackgroundFieldCanvas() {
       }
       ctx.stroke();
 
-      // Subtle crosshair ticks at alternating grid intersections
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.beginPath();
       for (let gx = offsetX; gx < width; gx += gridSize * 2) {
@@ -189,7 +196,6 @@ export function BackgroundFieldCanvas() {
           n.x += n.vx;
           n.y += n.vy;
 
-          // Subtle magnetic drift when close to pointer
           if (pointerActive) {
             const dx = mouseX - n.x;
             const dy = mouseY - n.y;
@@ -208,19 +214,17 @@ export function BackgroundFieldCanvas() {
 
         const parallaxY = ((n.y - scrollOffset * 0.12 * n.depth) % height + height) % height;
 
-        // Draw particle dot
         ctx.beginPath();
         ctx.arc(n.x, parallaxY, n.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${(0.14 + n.depth * 0.24).toFixed(3)})`;
         ctx.fill();
 
-        // Connect neighboring nodes
         for (let j = i + 1; j < nodes.length; j++) {
           const m = nodes[j];
           const mParallaxY = ((m.y - scrollOffset * 0.12 * m.depth) % height + height) % height;
           const dist = Math.hypot(n.x - m.x, parallaxY - mParallaxY);
           if (dist < 135) {
-            const lineAlpha = (1 - dist / 135) * 0.085;
+            const lineAlpha = Math.max(0, (1 - dist / 135) * 0.085);
             ctx.beginPath();
             ctx.moveTo(n.x, parallaxY);
             ctx.lineTo(m.x, mParallaxY);
@@ -230,11 +234,10 @@ export function BackgroundFieldCanvas() {
           }
         }
 
-        // Connect to cursor when nearby
         if (pointerActive) {
           const pDist = Math.hypot(n.x - mouseX, parallaxY - mouseY);
           if (pDist < 165) {
-            const pAlpha = (1 - pDist / 165) * 0.16;
+            const pAlpha = Math.max(0, (1 - pDist / 165) * 0.16);
             ctx.beginPath();
             ctx.moveTo(n.x, parallaxY);
             ctx.lineTo(mouseX, mouseY);

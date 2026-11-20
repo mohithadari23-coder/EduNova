@@ -184,13 +184,17 @@ export function WireframeHeroCanvas() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = rect.width;
       height = rect.height;
-      canvas.width = Math.max(1, Math.floor(width * dpr));
-      canvas.height = Math.max(1, Math.floor(height * dpr));
+      if (width <= 0 || height <= 0) return;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     resize();
     window.addEventListener('resize', resize);
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+    resizeObserver?.observe(canvas);
 
     let targetMouseX = 0;
     let targetMouseY = 0;
@@ -235,7 +239,6 @@ export function WireframeHeroCanvas() {
       pointerPull: number
     ): ProjectedPoint[] => {
       return mesh.vertices.map(([vx, vy, vz]) => {
-        // Harmonic 3D traveling spherical wave displacement
         const wave =
           waveAmp > 0
             ? 1 +
@@ -247,7 +250,6 @@ export function WireframeHeroCanvas() {
 
         const [x3, y3, z3] = rotatePoint3D([vx * wave, vy * wave, vz * wave], rx, ry, rz);
 
-        // Subtle local attraction toward pointer vector on front hemisphere
         const pull = pointerPull > 0 && z3 > 0 ? pointerPull * z3 : 0;
         const px = x3 + smoothMouseX * pull;
         const py = y3 + smoothMouseY * pull;
@@ -333,7 +335,6 @@ export function WireframeHeroCanvas() {
       ctx.stroke();
       ctx.restore();
 
-      // Draw 2 orbiting beacon nodes on each gimbal ring
       const idxA = Math.floor(((time * 16) % RING_SEGMENTS + RING_SEGMENTS) % RING_SEGMENTS);
       const idxB = (idxA + RING_SEGMENTS / 2) % RING_SEGMENTS;
       for (const idx of [idxA, idxB]) {
@@ -347,6 +348,11 @@ export function WireframeHeroCanvas() {
     };
 
     const drawFrame = () => {
+      if (width <= 0 || height <= 0) {
+        if (!prefersReducedMotion) rafId = requestAnimationFrame(drawFrame);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
       if (!prefersReducedMotion) {
@@ -368,14 +374,14 @@ export function WireframeHeroCanvas() {
       const centerX = width >= 960 ? width * 0.72 : width * 0.5;
       const centerY = height * 0.5;
       const breath = prefersReducedMotion ? 1 : 1 + Math.sin(time * 1.45) * 0.032;
-      const baseRadius = Math.min(width, height) * (width >= 960 ? 0.37 : 0.33) * breath;
+      const baseRadius = Math.max(20, Math.min(width, height) * (width >= 960 ? 0.37 : 0.33) * breath);
 
       // 0. Pulsing concentric resonance rings & sweeping angular radar arcs behind sphere
       if (!prefersReducedMotion) {
         for (let r = 0; r < 3; r++) {
           const cycle = ((time * 0.24 + r / 3) % 1 + 1) % 1;
-          const waveR = baseRadius * (0.45 + cycle * 1.45);
-          const waveAlpha = (1 - cycle) * 0.14;
+          const waveR = Math.max(1, baseRadius * (0.45 + cycle * 1.45));
+          const waveAlpha = Math.max(0, (1 - cycle) * 0.14);
           ctx.beginPath();
           ctx.arc(centerX, centerY, waveR, 0, Math.PI * 2);
           ctx.strokeStyle = `rgba(255, 255, 255, ${waveAlpha.toFixed(3)})`;
@@ -383,10 +389,9 @@ export function WireframeHeroCanvas() {
           ctx.stroke();
         }
 
-        // Rotating sweep arcs around outer boundary
         for (let a = 0; a < 2; a++) {
           const startAngle = time * (a === 0 ? 0.42 : -0.3) + a * Math.PI;
-          const arcRadius = baseRadius * (1.58 + a * 0.16);
+          const arcRadius = Math.max(1, baseRadius * (1.58 + a * 0.16));
           ctx.beginPath();
           ctx.arc(centerX, centerY, arcRadius, startAngle, startAngle + Math.PI * 0.42);
           ctx.strokeStyle = `rgba(255, 255, 255, ${a === 0 ? 0.16 : 0.1})`;
@@ -563,6 +568,7 @@ export function WireframeHeroCanvas() {
 
     return () => {
       cancelAnimationFrame(rafId);
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerdown', onPointerDown);

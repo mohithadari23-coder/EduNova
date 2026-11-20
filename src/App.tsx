@@ -426,7 +426,7 @@ export default function App() {
                   initial={prefersReducedMotion ? false : { opacity: 0, y: 26, scale: 0.98 }}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   whileHover={prefersReducedMotion ? undefined : { y: -4 }}
-                  viewport={{ once: true, amount: 0.18 }}
+                  viewport={{ once: true, amount: 'some' }}
                   transition={{ duration: 0.48, delay: idx * 0.09, ease: [0.16, 1, 0.3, 1] }}
                   className="border border-[#262626] bg-[#0A0A0A] p-7 transition-colors duration-200 hover:border-[#525252]"
                 >

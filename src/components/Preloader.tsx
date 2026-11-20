@@ -10,20 +10,26 @@ export function Preloader({ onComplete }: PreloaderProps) {
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
+    let finishTimer: number | undefined;
+    let rafId = 0;
+
     if (prefersReducedMotion) {
       setProgress(100);
-      const t = window.setTimeout(() => {
+      finishTimer = window.setTimeout(() => {
         setVisible(false);
-        onComplete();
-      }, 150);
-      return () => window.clearTimeout(t);
+        onCompleteRef.current();
+      }, 140);
+      return () => {
+        if (finishTimer !== undefined) window.clearTimeout(finishTimer);
+      };
     }
 
-    const duration = 1250;
+    const duration = 1150;
     const start = performance.now();
-    let rafId = 0;
 
     const tick = (now: number) => {
       const elapsed = now - start;
@@ -35,16 +41,19 @@ export function Preloader({ onComplete }: PreloaderProps) {
       if (t < 1) {
         rafId = requestAnimationFrame(tick);
       } else {
-        window.setTimeout(() => {
+        finishTimer = window.setTimeout(() => {
           setVisible(false);
-          onComplete();
-        }, 180);
+          onCompleteRef.current();
+        }, 160);
       }
     };
 
     rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [onComplete, prefersReducedMotion]);
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (finishTimer !== undefined) window.clearTimeout(finishTimer);
+    };
+  }, [prefersReducedMotion]);
 
   // Nested 3D wireframe cube + inner octahedron + dual orbital rings
   useEffect(() => {
@@ -57,7 +66,7 @@ export function Preloader({ onComplete }: PreloaderProps) {
     const size = 180;
     canvas.width = size * dpr;
     canvas.height = size * dpr;
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const cubeVerts: [number, number, number][] = [
       [-1, -1, -1],
@@ -136,7 +145,6 @@ export function Preloader({ onComplete }: PreloaderProps) {
       const cy = size / 2;
       angle += 0.032;
 
-      // Dual counter-rotating orbital rings
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(angle * 0.45);
@@ -157,7 +165,6 @@ export function Preloader({ onComplete }: PreloaderProps) {
       ctx.stroke();
       ctx.restore();
 
-      // Outer wireframe cube + inner counter-rotating octahedron
       projectShape(cubeVerts, cubeEdges, angle, angle * 0.65, 84, 0.65);
       projectShape(octVerts, octEdges, -angle * 1.35, angle * 0.85, 48, 0.45);
 
@@ -173,10 +180,10 @@ export function Preloader({ onComplete }: PreloaderProps) {
       {visible && (
         <motion.div
           key="preloader"
-          initial={{ clipPath: 'inset(0% 0% 0% 0%)' }}
+          initial={{ y: '0%' }}
           exit={{
-            clipPath: 'inset(0% 0% 100% 0%)',
-            transition: { duration: 0.78, ease: [0.76, 0, 0.24, 1] },
+            y: '-100%',
+            transition: { duration: 0.72, ease: [0.76, 0, 0.24, 1] },
           }}
           className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-black px-6 py-10 text-white"
           aria-label="Loading ScholarCraft"

@@ -90,7 +90,7 @@ export function GeneratorForm({
           onSubmit={handleSubmit}
           initial={prefersReducedMotion ? false : { opacity: 0, y: 30, scale: 0.99 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, amount: 0.14 }}
+          viewport={{ once: true, amount: 'some' }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="border border-[#262626] bg-[#0A0A0A] p-6 sm:p-10"
         >

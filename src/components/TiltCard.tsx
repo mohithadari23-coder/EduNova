@@ -52,7 +52,7 @@ export function TiltCard({ children, className = '', delay = 0 }: TiltCardProps)
       initial={prefersReducedMotion ? false : { opacity: 0, y: 30, scale: 0.985 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       whileHover={prefersReducedMotion ? undefined : { scale: 1.008 }}
-      viewport={{ once: true, amount: 0.12 }}
+      viewport={{ once: true, amount: 'some' }}
       transition={{ duration: 0.52, delay, ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setHovered(true)}
       onMouseMove={handleMouseMove}
